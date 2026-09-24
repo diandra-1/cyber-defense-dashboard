@@ -91,7 +91,7 @@ export default function App() {
     saveAlerts(alerts);
   }, [alerts]);
 
-  // Global Keyboard shortcut for 21st.dev Command Palette (⌘K / Ctrl+K)
+  // Global Keyboard shortcut for Command Palette (⌘K / Ctrl+K)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -276,7 +276,7 @@ export default function App() {
 
         {/* Canvas Body */}
         <div className="canvas">
-          {/* Hero Bar - Clean, Monochrome, Zero AI-Slop */}
+          {/* Operations Hero Bar */}
           <section className="hero">
             <div>
               <p className="eyebrow">
@@ -410,7 +410,7 @@ export default function App() {
         />
       )}
 
-      {/* 21st.dev Interactive Command Palette */}
+      {/* Interactive Command Palette */}
       <CommandPalette 
         isOpen={commandsOpen}
         onClose={() => setCommandsOpen(false)}

@@ -159,7 +159,7 @@ export default function LoginPage({ onSignIn }) {
 
   return (
     <main className="login-shell" onMouseMove={handleMouseMove}>
-      {/* Horizon Light Beam: Living Apple VisionOS Atmosphere (Serene & Clean) */}
+      {/* Horizon Light Beam Atmosphere */}
       <div className="horizon-beam" aria-hidden="true" />
 
       {/* Ethereal Floating Stardust Particles */}
@@ -213,7 +213,7 @@ export default function LoginPage({ onSignIn }) {
           </div>
         </section>
 
-        {/* Right Console: Apple VisionOS Dark Liquid Glass Card */}
+        {/* Right Console: Liquid Glass Authentication Card */}
         <section className="login-card-wrapper">
           <div 
             ref={cardRef}

@@ -2,5 +2,11 @@ node_modules
 build
 .env
 .env.local
-mcp/*.key
 .DS_Store
+
+# Local AI & agent configs
+CLAUDE.md
+*_SKILL.md
+opencode.json
+.mcp.json
+mcp/

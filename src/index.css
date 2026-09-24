@@ -555,7 +555,7 @@ h1, h2, h3, .font-display {
   margin: 0 auto;
 }
 
-/* Hero Section (No AI-slop: clean typography, monochrome title, live pulse) */
+/* Hero Section - Operations Status & Live Telemetry */
 .hero {
   display: flex;
   align-items: flex-end;
@@ -1334,7 +1334,7 @@ h1, h2, h3, .font-display {
   color: var(--ink-secondary);
 }
 
-/* Network Topology Graph (Interactive 21st.dev style) */
+/* Network Topology Graph */
 .topology-card {
   min-height: 400px;
   display: flex;
@@ -2613,7 +2613,7 @@ h1, h2, h3, .font-display {
   margin-left: 8px;
 }
 
-/* Login Page: Konsep 3 - Unified Deep Dark Canvas & Horizon Beam (Apple VisionOS + aura.build) */
+/* Login Page - Authentication View Canvas */
 .login-shell {
   min-height: 100vh;
   width: 100%;
@@ -2627,7 +2627,7 @@ h1, h2, h3, .font-display {
   color: #FFFFFF;
 }
 
-/* Horizon Light Beam (Living Apple VisionOS Atmosphere - Serene & Clean) */
+/* Horizon Light Beam Atmosphere */
 .horizon-beam {
   position: absolute;
   top: 0;
@@ -2822,7 +2822,7 @@ h1, h2, h3, .font-display {
   color: #94A3B8;
 }
 
-/* Right Section: Apple VisionOS Dark Liquid Glass Card */
+/* Right Section: Liquid Glass Card */
 .liquid-glass-card {
   width: 100%;
   padding: 38px 34px;
@@ -2874,7 +2874,7 @@ h1, h2, h3, .font-display {
   z-index: 1;
 }
 
-/* Persona Role Switcher Tabs (VisionOS dark tactile pills) */
+/* Persona Role Switcher Tabs */
 .role-tabs {
   display: flex;
   gap: 5px;
@@ -2919,7 +2919,7 @@ h1, h2, h3, .font-display {
   color: var(--signal-coral);
 }
 
-/* VisionOS Dark Glass Inputs */
+/* Glass Input Controls */
 .glass-input-wrap {
   position: relative;
   display: flex;

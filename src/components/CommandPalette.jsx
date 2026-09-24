@@ -270,7 +270,7 @@ export default function CommandPalette({
             <span>Use <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[9px]">↑</kbd> <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[9px]">↓</kbd> to navigate</span>
             <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[9px]">↵</kbd> to select</span>
           </div>
-          <span className="font-mono text-[10px] text-signal-blue">21st.dev Command Palette</span>
+          <span className="font-mono text-[10px] text-signal-blue">Sentinel Command Palette</span>
         </div>
       </div>
     </div>
