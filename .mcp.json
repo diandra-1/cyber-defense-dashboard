@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "twentyfirst": {
+      "command": "node",
+      "args": ["./mcp/twentyfirst-mcp.cjs"]
+    },
+    "aura-build": {
+      "command": "node",
+      "args": ["./mcp/aura-build-mcp.cjs"]
+    }
+  }
+}

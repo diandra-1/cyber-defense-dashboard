@@ -1,0 +1,6 @@
+node_modules
+build
+.env
+.env.local
+mcp/*.key
+.DS_Store

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "twentyfirst": {
+      "type": "local",
+      "command": ["node", "./mcp/twentyfirst-mcp.cjs"],
+      "enabled": true
+    },
+    "aura-build": {
+      "type": "local",
+      "command": ["node", "./mcp/aura-build-mcp.cjs"],
+      "enabled": true
+    }
+  }
+}
