@@ -90,7 +90,7 @@ export default function BruteForceMonitor({ onSay }) {
         </div>
 
         {/* Impossible Travel Flag */}
-        <div className="panel flex flex-col justify-between border-signal-coral/20 bg-gradient-to-b from-white to-red-50/20">
+        <div className="panel flex flex-col justify-between border-red-500/30 bg-red-500/5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-signal-coral flex items-center gap-1">
               <AlertTriangle size={13} /> Geo-Velocity Flags
@@ -147,7 +147,7 @@ export default function BruteForceMonitor({ onSay }) {
                     onSay?.(`Filtered brute force telemetry for ${item.country}: ${item.attempts.toLocaleString()} total attempts.`);
                   }}
                   className={`p-2 rounded-lg cursor-pointer transition-all ${
-                    isSelected ? 'bg-slate-100 ring-1 ring-slate-300' : 'hover:bg-slate-50'
+                    isSelected ? 'bg-white/[0.08] ring-1 ring-white/[0.2]' : 'hover:bg-white/[0.04]'
                   }`}
                 >
                   <div className="flex items-center justify-between text-xs mb-1.5">
@@ -160,7 +160,7 @@ export default function BruteForceMonitor({ onSay }) {
                     </span>
                   </div>
 
-                  <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="w-full h-2 rounded-full bg-white/[0.08] overflow-hidden">
                     <div 
                       className="h-full rounded-full transition-all duration-700 bg-signal-coral"
                       style={{ 
@@ -268,7 +268,7 @@ export default function BruteForceMonitor({ onSay }) {
               {recentAttempts.map((attempt, idx) => (
                 <tr 
                   key={idx}
-                  className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                  className="hover:bg-white/[0.04] transition-colors group cursor-pointer"
                   onClick={() => onSay?.(`Investigating IP: ${attempt.ip} (${attempt.country}). Automated edge block rule is ACTIVE.`)}
                 >
                   <td className="py-2.5 px-3 font-mono text-ink-muted">{attempt.timestamp}</td>
@@ -277,7 +277,7 @@ export default function BruteForceMonitor({ onSay }) {
                     {attempt.ip}
                   </td>
                   <td className="py-2.5 px-3 font-mono text-ink-secondary">
-                    <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200">
+                    <span className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08]">
                       {attempt.username}
                     </span>
                   </td>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Search, Bell, X, ArrowRight, ShieldCheck, ChevronRight, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Bell, X, ArrowRight, ShieldCheck, ChevronRight, User, PanelLeftClose, PanelLeftOpen, Volume2, VolumeX } from 'lucide-react';
+import { audioEngine } from '../lib/audioEngine';
 
 export default function Header({ 
   page, 
@@ -11,21 +12,45 @@ export default function Header({
   onOpenProfile, 
   session,
   live,
-  onSay 
+  onSay,
+  sidebarOpen = true,
+  onToggleSidebar,
+  activeWorkspace = 'Sentinel HQ'
 }) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => audioEngine.getMuted());
   const urgentCount = alerts.filter(a => a.severity === 'Critical' || a.severity === 'High').length;
+
+  useEffect(() => {
+    return audioEngine.subscribe((muted) => setIsMuted(muted));
+  }, []);
+
+  const handleToggleMute = () => {
+    const next = audioEngine.toggleMute();
+    setIsMuted(next);
+    if (!next) {
+      audioEngine.tick(0.08);
+    }
+    onSay?.(next ? 'Haptic sound muted.' : 'Haptic sound enabled.');
+  };
 
   return (
     <header className="topbar">
-      {/* Breadcrumb - Clean & Architectural */}
-      <div className="crumb">
-        <b>{page}</b>
-        <span>/</span>
-        <span>Security Workspace</span>
-        <div className="hidden sm:flex items-center gap-1.5 ml-3 px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-mono text-ink-secondary">
-          <span className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-signal-emerald animate-pulse-subtle' : 'bg-slate-400'}`} />
-          {live ? 'Edge Gateway Active' : 'Sensor Paused'}
+      {/* Brand & Breadcrumb */}
+      <div className="crumb flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400 font-bold text-xs shadow-sm">
+            <ShieldCheck size={16} />
+          </div>
+          <b className="text-sm font-display tracking-tight text-white">SENTINEL</b>
+        </div>
+
+        <span className="text-slate-600 text-xs">/</span>
+        <span className="text-xs font-mono font-medium text-slate-300">{page}</span>
+
+        <div className="hidden lg:flex items-center gap-1.5 ml-2 px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-[10.5px] font-mono text-slate-400">
+          <span className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-sky-400 animate-pulse-subtle' : 'bg-slate-500'}`} />
+          8 Edge PoPs Active
         </div>
       </div>
 
@@ -34,16 +59,18 @@ export default function Header({
         {/* Search & Command Palette Trigger */}
         <div 
           className="search cursor-pointer group"
-          onClick={onOpenCommands}
+          onClick={() => {
+            audioEngine.tick(0.04);
+            onOpenCommands();
+          }}
         >
           <Search size={15} className="text-ink-muted group-hover:text-ink-primary transition-colors" />
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search signals, IPs, rules..."
-            className="cursor-pointer"
+            className="cursor-pointer bg-transparent text-ink-primary outline-none"
             onClick={(e) => {
-              // If clicked directly without typing, open command palette
               if (!query) onOpenCommands();
             }}
           />
@@ -52,17 +79,31 @@ export default function Header({
               e.stopPropagation();
               onOpenCommands();
             }}
-            className="hover:bg-slate-200 transition-colors"
+            className="bg-white/[0.06] border border-white/[0.1] text-ink-muted hover:text-white transition-colors"
           >
             ⌘K
           </kbd>
         </div>
 
+        {/* Audio Mute/Unmute Haptic Button */}
+        <button
+          type="button"
+          onClick={handleToggleMute}
+          className={`icon-button border border-white/[0.08] ${isMuted ? 'text-slate-500 hover:text-slate-300' : 'text-signal-blue hover:text-sky-300'}`}
+          title={isMuted ? "Unmute Haptic Sound" : "Mute Haptic Sound"}
+          aria-label={isMuted ? "Unmute Haptic Sound" : "Mute Haptic Sound"}
+        >
+          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
+
         {/* Notifications Popover */}
         <div className="popover-wrap">
           <button 
-            className="icon-button"
-            onClick={() => setShowNotifications(!showNotifications)}
+            className="icon-button border border-white/[0.08]"
+            onClick={() => {
+              audioEngine.tick(0.04);
+              setShowNotifications(!showNotifications);
+            }}
             aria-label="Toggle notifications"
           >
             <Bell size={17} />
@@ -70,11 +111,11 @@ export default function Header({
           </button>
 
           {showNotifications && (
-            <div className="notifications">
-              <header>
+            <div className="notifications bg-[#0D1117] border border-white/[0.1] shadow-2xl">
+              <header className="border-b border-white/[0.08]">
                 <div>
-                  <b>Signal Activity Feed</b>
-                  <small>Live gateway stream updates</small>
+                  <b className="text-ink-primary">Signal Activity Feed</b>
+                  <small className="text-ink-muted">Live gateway stream updates</small>
                 </div>
                 <button 
                   onClick={() => setShowNotifications(false)}
@@ -93,15 +134,15 @@ export default function Header({
                 </p>
                 <p>
                   <span className="dot safe" />
-                  <span>
+                  <span className="text-ink-secondary">
                     Core edge firewall rules synchronized across all clusters.
                   </span>
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between">
                 <button 
-                  className="quiet-link"
+                  className="quiet-link text-signal-blue"
                   onClick={() => {
                     setShowNotifications(false);
                     onNavigate('Threats');
@@ -125,8 +166,11 @@ export default function Header({
 
         {/* Analyst Profile Avatar */}
         <button 
-          className="avatar" 
-          onClick={onOpenProfile}
+          className="avatar border border-white/[0.1]" 
+          onClick={() => {
+            audioEngine.tick(0.04);
+            onOpenProfile();
+          }}
           title="Analyst Profile"
         >
           {session?.name ? session.name.slice(0, 2).toUpperCase() : 'SA'}

@@ -48,7 +48,7 @@ export default function AssetsView({ onSay }) {
               <CheckCircle2 size={12} /> 100% telemetry visibility
             </span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-ink-secondary">
+          <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-ink-secondary">
             <Server size={22} />
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function AssetsView({ onSay }) {
                 return (
                   <tr 
                     key={device.name}
-                    className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                    className="hover:bg-white/[0.04] transition-colors group cursor-pointer"
                     onClick={() => onSay?.(`Inspecting asset ${device.name} (${device.ip}). Agent health: Nominal.`)}
                   >
                     <td className="py-3 px-3 font-semibold text-ink-primary flex items-center gap-2">

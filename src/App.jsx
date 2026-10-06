@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, 
   ShieldAlert, 
@@ -21,12 +22,14 @@ import {
   Gauge, 
   Flame,
   Radio,
-  Server
+  Server,
+  Search
 } from 'lucide-react';
 
 // Modular Components
 import Header from './components/Header';
 import CommandPalette from './components/CommandPalette';
+import { SentinelVerticalDock } from './components/ui/dock';
 import NetworkTraffic from './components/NetworkTraffic';
 import SystemPosture from './components/SystemPosture';
 import NetworkTopology from './components/NetworkTopology';
@@ -40,6 +43,9 @@ import AssetsView from './components/AssetsView';
 import ReportsView from './components/ReportsView';
 import StatCard from './components/StatCard';
 import LoginPage from './components/LoginPage';
+import { appleSprings } from './lib/fluidMotion';
+import { audioEngine } from './lib/audioEngine';
+import confetti from 'canvas-confetti';
 
 // Persistent storage services
 import { 
@@ -78,6 +84,8 @@ export default function App() {
   
   // Track topology isolation state centrally
   const [isServerIsolated, setIsServerIsolated] = useState(() => loadTopology().isolated);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeWorkspace, setActiveWorkspace] = useState('Sentinel HQ');
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -121,6 +129,7 @@ export default function App() {
   };
 
   const simulateThreat = () => {
+    audioEngine.alertChirp();
     const vectors = [
       { title: 'Anomalous egress burst', source: '91.214.124.19', country: 'Unknown source', detail: 'Outbound flow exceeded learned baseline by 190% over port 443.' },
       { title: 'Encrypted C2 beaconing', source: '185.220.101.99', country: 'Netherlands', detail: 'Regular 60s jittered telemetry matched Cobalt Strike listener profile.' },
@@ -143,12 +152,20 @@ export default function App() {
   };
 
   const resolveAlert = (id) => {
+    audioEngine.successChime();
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.65 },
+      colors: ['#38BDF8', '#10B981', '#F8FAFC']
+    });
     setAlerts(prev => prev.filter(a => a.id !== id));
     setSelectedAlert(null);
     say('Incident mitigated and logged to audit trail.');
   };
 
   const blockSource = (alert) => {
+    audioEngine.switchClick(0.1);
     setAlerts(prev => prev.filter(a => a.id !== alert.id));
     setSelectedAlert(null);
     say(`ACL rule deployed: ${alert.source} dropped at edge gateway.`);
@@ -156,6 +173,7 @@ export default function App() {
 
   const toggleIsolateServer = () => {
     const next = !isServerIsolated;
+    audioEngine.switchClick(0.1);
     setIsServerIsolated(next);
     saveTopology({ isolated: next });
     say(next 
@@ -175,24 +193,82 @@ export default function App() {
 
   const urgentCount = alerts.filter(a => a.severity === 'Critical' || a.severity === 'High').length;
 
+  const sentinelNavGroups = useMemo(() => [
+    {
+      items: [
+        { id: 'search', title: 'Quick Action', icon: Search, shortcut: '⌘K' },
+        { id: 'Overview', title: 'Defense Operations', icon: LayoutDashboard },
+        { id: 'Network', title: 'Gateway Telemetry', icon: Network },
+      ]
+    },
+    {
+      heading: 'Threat Response',
+      items: [
+        { id: 'Threats', title: 'Incident Triage', icon: ShieldAlert, badge: urgentCount > 0 ? urgentCount : undefined },
+        { id: 'Brute Force', title: 'Brute Force Stream', icon: Terminal },
+      ]
+    },
+    {
+      heading: 'Containment Fleet',
+      items: [
+        { 
+          id: 'Assets', 
+          title: 'Zero-Trust Endpoints', 
+          icon: Laptop,
+          children: [
+            { id: 'assets-servers', title: 'Servers (1 Action)', icon: Server },
+            { id: 'assets-workstations', title: 'Workstations (Safe)', icon: Laptop },
+          ]
+        },
+        { id: 'Malware detection', title: 'Malware Sandbox', icon: FileSearch },
+      ]
+    },
+    {
+      heading: 'Governance & Audit',
+      items: [
+        { id: 'Reports', title: 'Shift Briefs (PDF)', icon: Download },
+      ]
+    }
+  ], [urgentCount]);
+
+  const sentinelBottomItems = useMemo(() => [
+    { id: 'Profile', title: 'Analyst Profile', icon: UserRound },
+    { id: 'Settings', title: 'Settings', icon: Settings, shortcut: '⌘,' },
+    { id: 'logout', title: 'Log out', icon: X },
+  ], []);
+
+  const handleNavSelect = (id) => {
+    if (id === 'search') {
+      setCommandsOpen(true);
+      return;
+    }
+    if (id === 'logout') {
+      signOut();
+      return;
+    }
+    if (id === 'assets-servers' || id === 'assets-workstations') {
+      navigate('Assets');
+      return;
+    }
+    navigate(id);
+  };
+
   if (!session) {
     return <LoginPage onSignIn={signIn} />;
   }
 
   return (
-    <div className="app-shell">
-      {/* Architectural Charcoal Sidebar (Aura.build discipline) */}
-      <aside className="rail">
-        <button className="brand" onClick={() => navigate('Overview')}>
-          <span className="brand-glyph">
-            <ShieldCheck size={18} />
-          </span>
-          <span className="brand-title">sentinel</span>
-        </button>
+    <div className="app-shell bg-[#080A0F] text-[#F8FAFC] min-h-screen">
+      {/* Vertical macOS Floating Dock with Wave Magnification */}
+      <SentinelVerticalDock 
+        activePage={page} 
+        onNavigate={navigate} 
+        urgentCount={urgentCount} 
+      />
 
-        <p className="rail-label">Operational Workspace</p>
-
-        <nav className="workspace-nav">
+      {/* Mobile Bottom Navigation Strip */}
+      <nav className="rail md:hidden" aria-label="Mobile Navigation">
+        <div className="workspace-nav">
           {Object.entries(pages).map(([name, [Icon]]) => {
             const isActive = page === name;
             return (
@@ -212,54 +288,11 @@ export default function App() {
               </button>
             );
           })}
-        </nav>
-
-        {/* Rail Footer with Command Quick Launch & Posture */}
-        <div className="rail-footer">
-          <button 
-            className="command-launch"
-            onClick={() => setCommandsOpen(true)}
-          >
-            <Command size={15} />
-            <div className="min-w-0">
-              <b>Quick Command</b>
-              <small>Spotlight actions</small>
-            </div>
-            <kbd>⌘K</kbd>
-          </button>
-
-          <button 
-            className="posture-mini"
-            onClick={() => say('Defense Score is 94/100. 1 update pending on Server-Main.')}
-          >
-            <div>
-              <small>DEFENSE POSTURE</small>
-              <strong>94<i>/100</i></strong>
-              <em>
-                <span /> Optimal
-              </em>
-            </div>
-            <div className="mini-ring" />
-          </button>
-
-          <button 
-            className="analyst-badge"
-            onClick={() => navigate('Profile')}
-          >
-            <div className="analyst-avatar">
-              {session.name.slice(0, 2).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <b className="truncate">{session.name}</b>
-              <small className="truncate">{session.email}</small>
-            </div>
-            <ChevronRight size={14} className="text-slate-500 ml-auto" />
-          </button>
         </div>
-      </aside>
+      </nav>
 
-      {/* Main App Container */}
-      <main className="main-content">
+      {/* Main App Container with Dedicated Left Gutter for Floating Dock */}
+      <main className="main-content ml-0 md:ml-20 transition-all duration-300">
         {/* Topbar Navigation */}
         <Header 
           page={page}
@@ -272,143 +305,136 @@ export default function App() {
           session={session}
           live={live}
           onSay={say}
+          activeWorkspace={activeWorkspace}
         />
 
         {/* Canvas Body */}
         <div className="canvas">
-          {/* Operations Hero Bar */}
-          <section className="hero">
-            <div>
-              <p className="eyebrow">
-                <span className={live ? 'live-ping' : 'paused'} />
-                {live ? 'Live Sensor Telemetry' : 'Monitoring Paused'} · {page.toUpperCase()}
-              </p>
-              <h1>
-                {page === 'Overview' ? 'Network Defense Operations' : page}
+          {/* Operations Cockpit Header - Clean & Focused */}
+          <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-2.5 border-b border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              <span className={`w-2 h-2 rounded-full ${live ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+              <h1 className="text-lg md:text-xl font-bold font-display text-white tracking-tight">
+                {page === 'Overview' ? 'Cyber Defense Cockpit' : page}
               </h1>
-              <p>{pages[page][1]}</p>
+              <span className="text-xs font-mono text-slate-500 hidden sm:inline">· AS13335 Edge Node</span>
             </div>
 
-            <div className="hero-actions">
-              <button 
-                className="monitor-btn"
+            <div className="flex items-center gap-2">
+              <motion.button 
+                whileTap={appleSprings.tapPress}
+                className="px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-xs font-mono text-slate-300 transition-colors flex items-center gap-1.5"
                 onClick={() => {
+                  audioEngine.tick(0.04);
                   setLive(!live);
-                  say(live ? 'Live stream paused.' : 'Live stream resumed.');
+                  say(live ? 'Sensor stream paused.' : 'Sensor stream resumed.');
                 }}
               >
-                <span className={live ? 'live-ping' : 'paused'} />
-                {live ? 'Monitoring Active' : 'Stream Paused'}
-              </button>
-              <button 
-                className="primary-btn"
+                <span className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                {live ? 'Live Sensor' : 'Paused'}
+              </motion.button>
+              <motion.button 
+                whileHover={appleSprings.hoverElevate}
+                whileTap={appleSprings.tapPress}
+                className="px-3 py-1 rounded-md bg-red-600/90 hover:bg-red-600 border border-red-500/50 text-white text-xs font-semibold shadow-md shadow-red-900/30 transition-all flex items-center gap-1"
                 onClick={simulateThreat}
               >
-                <Plus size={15} /> Simulate Event
-              </button>
+                <Plus size={13} /> Simulate
+              </motion.button>
             </div>
           </section>
 
-          {/* Status Banner */}
-          <section className="status-banner">
-            <span className="shield-icon">
-              <ShieldCheck size={18} />
-            </span>
-            <span>
-              <b>Core perimeter defenses operating normally.</b> 248 active connection flows observed across Edge Gateway.
-            </span>
-            <button onClick={() => say('Gateway latency: 1.2ms. BGP peer convergence: 100%.')}>
-              View Telemetry Health <ArrowRight size={13} />
-            </button>
-          </section>
-
-          {/* Dynamic Page Switcher */}
-          {page === 'Overview' && (
-            <OverviewPage 
-              alerts={filteredAlerts}
-              allAlerts={alerts}
-              filter={filter}
-              setFilter={setFilter}
-              onSelectAlert={setSelectedAlert}
-              period={period}
-              setPeriod={setPeriod}
-              onSay={say}
-              onNavigate={navigate}
-              onSimulate={simulateThreat}
-              isServerIsolated={isServerIsolated}
-              setIsServerIsolated={setIsServerIsolated}
-            />
-          )}
-
-          {page === 'Threats' && (
-            <IncidentBoard 
-              alerts={filteredAlerts}
-              allAlerts={alerts}
-              filter={filter}
-              setFilter={setFilter}
-              onSelectAlert={setSelectedAlert}
-              onSimulate={simulateThreat}
-              onSay={say}
-            />
-          )}
-
-          {page === 'Network' && (
-            <div className="space-y-6">
-              <NetworkTraffic 
+          {/* Dynamic Page Switcher with Smooth View Transition */}
+          <div key={page} className="view-transition">
+            {page === 'Overview' && (
+              <OverviewPage 
+                alerts={filteredAlerts}
+                allAlerts={alerts}
+                filter={filter}
+                setFilter={setFilter}
+                onSelectAlert={setSelectedAlert}
                 period={period}
                 setPeriod={setPeriod}
                 onSay={say}
+                onNavigate={navigate}
+                onSimulate={simulateThreat}
+                isServerIsolated={isServerIsolated}
+                setIsServerIsolated={setIsServerIsolated}
               />
-              <NetworkTopology 
+            )}
+
+            {page === 'Threats' && (
+              <IncidentBoard 
+                alerts={filteredAlerts}
+                allAlerts={alerts}
+                filter={filter}
+                setFilter={setFilter}
+                onSelectAlert={setSelectedAlert}
+                onSimulate={simulateThreat}
                 onSay={say}
-                isolatedState={isServerIsolated}
-                setIsolatedState={setIsServerIsolated}
               />
-            </div>
-          )}
+            )}
 
-          {page === 'Brute Force' && (
-            <BruteForceMonitor onSay={say} />
-          )}
+            {page === 'Network' && (
+              <div className="space-y-6">
+                <NetworkTraffic 
+                  period={period}
+                  setPeriod={setPeriod}
+                  onSay={say}
+                />
+                <NetworkTopology 
+                  onSay={say}
+                  isolatedState={isServerIsolated}
+                  setIsolatedState={setIsServerIsolated}
+                />
+              </div>
+            )}
 
-          {page === 'Assets' && (
-            <AssetsView onSay={say} />
-          )}
+            {page === 'Brute Force' && (
+              <BruteForceMonitor onSay={say} />
+            )}
 
-          {page === 'Malware detection' && (
-            <MalwareDetection onSay={say} />
-          )}
+            {page === 'Assets' && (
+              <AssetsView onSay={say} />
+            )}
 
-          {page === 'Reports' && (
-            <ReportsView onSay={say} />
-          )}
+            {page === 'Malware detection' && (
+              <MalwareDetection onSay={say} />
+            )}
 
-          {page === 'Profile' && (
-            <ProfilePage 
-              session={session}
-              setSession={setSession}
-              onSay={say}
-            />
-          )}
+            {page === 'Reports' && (
+              <ReportsView onSay={say} />
+            )}
 
-          {page === 'Settings' && (
-            <SettingsPage 
-              onSay={say}
-              onSignOut={signOut}
-            />
-          )}
+            {page === 'Profile' && (
+              <ProfilePage 
+                session={session}
+                setSession={setSession}
+                onSay={say}
+              />
+            )}
+
+            {page === 'Settings' && (
+              <SettingsPage 
+                onSay={say}
+                onSignOut={signOut}
+              />
+            )}
+          </div>
         </div>
       </main>
 
-      {/* Incident Detail Modal */}
-      {selectedAlert && (
-        <IncidentModal 
-          alert={selectedAlert}
-          onClose={() => setSelectedAlert(null)}
-          onBlock={blockSource}
-          onResolve={resolveAlert}
-        />
-      )}
+      {/* Incident Detail Modal with Fluid Presentation */}
+      <AnimatePresence>
+        {selectedAlert && (
+          <IncidentModal 
+            alert={selectedAlert}
+            onClose={() => setSelectedAlert(null)}
+            onBlock={blockSource}
+            onResolve={resolveAlert}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Interactive Command Palette */}
       <CommandPalette 
@@ -422,16 +448,25 @@ export default function App() {
         alerts={alerts}
       />
 
-      {/* Floating System Toast Feedback */}
-      {toast && (
-        <div className="toast" role="status">
-          <CheckCircle2 size={16} />
-          <span>{toast}</span>
-          <button onClick={() => setToast('')} aria-label="Close notification">
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      {/* Floating System Toast Feedback with Fluid Spring */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.95 }}
+            transition={appleSprings.dropdown}
+            className="toast" 
+            role="status"
+          >
+            <CheckCircle2 size={16} />
+            <span>{toast}</span>
+            <button onClick={() => setToast('')} aria-label="Close notification">
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -455,15 +490,15 @@ function OverviewPage({
   setIsServerIsolated 
 }) {
   return (
-    <div className="space-y-6">
-      {/* Hierarchical Metrics Strip */}
-      <section className="metrics">
+    <div className="space-y-4">
+      {/* Bento Row 1: Metrics Strip */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard 
           label="Risk Posture"
           value="Low"
           note="38 / 39 checks nominal"
           icon={<Gauge size={18} />}
-          tone="safe"
+          tone="neutral"
           onClick={() => onSay('Risk posture calculated at 94/100.')}
         />
 
@@ -483,8 +518,8 @@ function OverviewPage({
           value="1,284"
           note="Automated edge ACLs"
           icon={<Zap size={18} />}
-          tone="amber"
-          trend={{ type: 'up', value: '+18.2%' }}
+          tone="neutral"
+          trend={{ type: 'neutral', value: '+18.2%' }}
           onClick={() => onSay('1,284 malicious requests rejected today.')}
         />
 
@@ -493,90 +528,112 @@ function OverviewPage({
           value="24 / 25"
           note={isServerIsolated ? "1 quarantined host" : "1 needs patch"}
           icon={<Laptop size={18} />}
-          tone="blue"
+          tone="neutral"
           onClick={() => onNavigate('Assets')}
         />
       </section>
 
-      {/* Row 1: Dominant 70% Network Hero Chart + System Posture */}
-      <section className="dashboard-grid top-grid">
-        <NetworkTraffic 
-          period={period}
-          setPeriod={setPeriod}
-          onSay={onSay}
-        />
-        <SystemPosture onSay={onSay} />
-      </section>
+      {/* 12-Column Bento Grid Cockpit Layout */}
+      <div className="bento-grid">
+        {/* Bento 1: Live Gateway Dual-Stream Telemetry (7 Col) */}
+        <div className="col-span-12 lg:col-span-7">
+          <NetworkTraffic 
+            period={period}
+            setPeriod={setPeriod}
+            onSay={onSay}
+          />
+        </div>
 
-      {/* Row 2: Global Threat Map & Priority Alert Feed */}
-      <section className="dashboard-grid globe-grid">
-        <ThreatRadarMap 
-          onSay={onSay}
-          onNavigate={onNavigate}
-        />
-        <AlertPanel 
-          alerts={alerts}
-          allAlerts={allAlerts}
-          filter={filter}
-          setFilter={setFilter}
-          onSelectAlert={onSelectAlert}
-          onSimulate={onSimulate}
-        />
-      </section>
+        {/* Bento 2: 3D Global Edge Mesh Cobe Globe (5 Col) */}
+        <div className="col-span-12 lg:col-span-5">
+          <ThreatRadarMap 
+            onSay={onSay}
+            onNavigate={onNavigate}
+          />
+        </div>
 
-      {/* Row 3: Interactive Network Topology */}
-      <section className="dashboard-grid topology-grid">
-        <NetworkTopology 
-          onSay={onSay}
-          isolatedState={isServerIsolated}
-          setIsolatedState={setIsServerIsolated}
-        />
+        {/* Bento 3: Network Topology & Host Containment (7 Col) */}
+        <div className="col-span-12 lg:col-span-7">
+          <NetworkTopology 
+            onSay={onSay}
+            isolatedState={isServerIsolated}
+            setIsolatedState={setIsServerIsolated}
+          />
+        </div>
 
-        {/* Brute Force Quick Widget */}
-        <article className="panel flex flex-col justify-between">
-          <header className="panel-heading">
-            <div>
-              <h2>Brute Force Velocity</h2>
-              <p>Credential stuffing mitigation rate</p>
+        {/* Bento 4: Priority Threat Signal Feed (5 Col) */}
+        <div className="col-span-12 lg:col-span-5">
+          <AlertPanel 
+            alerts={alerts}
+            allAlerts={allAlerts}
+            filter={filter}
+            setFilter={setFilter}
+            onSelectAlert={onSelectAlert}
+            onSimulate={onSimulate}
+          />
+        </div>
+
+        {/* Bento 5: System Posture & Remediation Checklist (7 Col) */}
+        <div className="col-span-12 lg:col-span-7">
+          <SystemPosture onSay={onSay} />
+        </div>
+
+        {/* Bento 6: Brute Force Velocity Quick Terminal (5 Col) */}
+        <div className="col-span-12 lg:col-span-5">
+          <article className="panel flex flex-col justify-between h-full bg-[#0D1117] border border-white/[0.08]">
+            <header className="panel-heading">
+              <div>
+                <h2 className="text-white font-display text-base">Brute Force Ingress Velocity</h2>
+                <p className="text-slate-400 text-xs">Credential stuffing mitigation rate</p>
+              </div>
+              <button 
+                className="quiet-link text-sky-400" 
+                onClick={() => {
+                  audioEngine.tick(0.04);
+                  onNavigate('Brute Force');
+                }}
+              >
+                Full log <ArrowRight size={13} />
+              </button>
+            </header>
+
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] my-2">
+              <div className="flex items-center justify-between text-xs mb-1.5 font-mono">
+                <span className="text-slate-400">Current Ingress Velocity</span>
+                <span className="font-bold text-red-400">3.8 reqs/sec</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-white/[0.08] overflow-hidden">
+                <div className="h-full bg-red-500 rounded-full w-3/4 animate-pulse" />
+              </div>
             </div>
-            <button className="quiet-link" onClick={() => onNavigate('Brute Force')}>
-              Full log <ArrowRight size={13} />
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1.5 border-b border-white/[0.06]">
+                <span className="text-slate-400">Top Targeted Service</span>
+                <span className="font-mono font-semibold text-slate-200">SSH Port 22 (74%)</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-white/[0.06]">
+                <span className="text-slate-400">Primary Vector Origin</span>
+                <span className="font-mono font-semibold text-slate-200">China / Russia (58%)</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-slate-400">Automated Mitigation</span>
+                <span className="font-mono font-semibold text-emerald-400">100% Blocked</span>
+              </div>
+            </div>
+
+            <button 
+              className="secondary-btn text-xs w-full mt-4 justify-center"
+              onClick={() => {
+                audioEngine.tick(0.04);
+                onNavigate('Brute Force');
+              }}
+            >
+              Open Brute Force Monitor <ArrowRight size={13} />
             </button>
-          </header>
-
-          <div className="p-4 rounded-xl bg-slate-50 border border-ink-border my-2">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-ink-secondary">Current Ingress Velocity</span>
-              <span className="font-mono font-bold text-signal-coral">3.8 reqs/sec</span>
-            </div>
-            <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
-              <div className="h-full bg-signal-coral rounded-full w-3/4" />
-            </div>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between py-1.5 border-b border-ink-border">
-              <span className="text-ink-secondary">Top Targeted Service</span>
-              <span className="font-mono font-semibold text-ink-primary">SSH Port 22 (74%)</span>
-            </div>
-            <div className="flex items-center justify-between py-1.5 border-b border-ink-border">
-              <span className="text-ink-secondary">Primary Vector Origin</span>
-              <span className="font-mono font-semibold text-ink-primary">China / Russia (58%)</span>
-            </div>
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-ink-secondary">Failed Attempt Mitigation</span>
-              <span className="font-mono font-semibold text-signal-emerald">100% Blocked</span>
-            </div>
-          </div>
-
-          <button 
-            className="secondary-btn text-xs w-full mt-4 justify-center"
-            onClick={() => onNavigate('Brute Force')}
-          >
-            Open Brute Force Monitor <ArrowRight size={13} />
-          </button>
-        </article>
-      </section>
+          </article>
+        </div>
+      </div>
     </div>
   );
 }

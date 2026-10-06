@@ -7,11 +7,12 @@ import {
   Globe, 
   Server, 
   Wifi, 
-  RefreshCw,
-  Lock,
-  Radio
+  RefreshCw, 
+  Lock, 
+  Radio 
 } from 'lucide-react';
 import { loadTopology, saveTopology } from '../services/securityStore';
+import { audioEngine } from '../lib/audioEngine';
 
 export default function NetworkTopology({ onSay, isolatedState, setIsolatedState }) {
   const saved = loadTopology();
@@ -105,6 +106,7 @@ export default function NetworkTopology({ onSay, isolatedState, setIsolatedState
 
   const toggleContainment = () => {
     const next = !isolated;
+    audioEngine.switchClick(0.1);
     setIsolated(next);
     saveTopology({ isolated: next });
     onSay?.(next 
@@ -115,6 +117,7 @@ export default function NetworkTopology({ onSay, isolatedState, setIsolatedState
 
   const handleRefresh = () => {
     if (refreshing) return;
+    audioEngine.sonarPing(0.08);
     setRefreshing(true);
     setTimeout(() => {
       setRefreshing(false);
@@ -169,7 +172,10 @@ export default function NetworkTopology({ onSay, isolatedState, setIsolatedState
               key={node.name}
               className={`topology-node ${node.tone} ${isFocused ? 'focused' : ''}`}
               style={{ left: node.x, top: node.y }}
-              onClick={() => setFocus(node.name)}
+              onClick={() => {
+                audioEngine.tick(0.04);
+                setFocus(node.name);
+              }}
             >
               <span>
                 <NodeIcon size={14} />

@@ -13,10 +13,11 @@ import {
   Sliders, 
   ArrowRight, 
   CornerDownLeft, 
-  X,
-  Radio,
-  Zap
+  X, 
+  Radio, 
+  Zap 
 } from 'lucide-react';
+import { audioEngine } from '../lib/audioEngine';
 
 export default function CommandPalette({ 
   isOpen, 
@@ -197,12 +198,12 @@ export default function CommandPalette({
   return (
     <div className="backdrop" onMouseDown={onClose}>
       <div 
-        className="command-modal"
+        className="command-modal bg-[#0D1117] border border-white/[0.1] shadow-2xl"
         onMouseDown={e => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-ink-border bg-white">
-          <Search size={18} className="text-ink-muted flex-shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.08] bg-[#0A0D13]">
+          <Search size={18} className="text-slate-400 flex-shrink-0" />
           <input
             ref={inputRef}
             value={search}
@@ -211,19 +212,19 @@ export default function CommandPalette({
               setSelectedIndex(0);
             }}
             placeholder="Type a command, navigate, or search active threats..."
-            className="w-full text-sm outline-none text-ink-primary bg-transparent placeholder-ink-muted"
+            className="w-full text-sm outline-none text-white bg-transparent placeholder-slate-500 font-sans"
           />
           <button 
             onClick={onClose}
-            className="text-ink-muted hover:text-ink-primary p-1 rounded-md"
+            className="text-slate-400 hover:text-white p-1 rounded-md"
           >
-            <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 border border-slate-200 rounded">ESC</kbd>
+            <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white/[0.06] border border-white/[0.1] text-slate-300 rounded">ESC</kbd>
           </button>
         </div>
 
         <div className="max-h-[380px] overflow-y-auto p-2">
           {filtered.length === 0 ? (
-            <div className="py-12 text-center text-ink-muted text-xs">
+            <div className="py-12 text-center text-slate-500 text-xs font-mono">
               No matching commands or threat records found.
             </div>
           ) : (
@@ -232,32 +233,38 @@ export default function CommandPalette({
               return (
                 <div
                   key={item.id}
-                  onClick={item.run}
-                  onMouseEnter={() => setSelectedIndex(idx)}
+                  onClick={() => {
+                    audioEngine.switchClick(0.08);
+                    item.run();
+                  }}
+                  onMouseEnter={() => {
+                    if (idx !== selectedIndex) audioEngine.tick(0.02);
+                    setSelectedIndex(idx);
+                  }}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all ${
-                    isSelected ? 'bg-slate-100 text-ink-primary' : 'text-ink-secondary hover:bg-slate-50'
+                    isSelected ? 'bg-white/[0.08] text-white border border-white/[0.1]' : 'text-slate-300 hover:bg-white/[0.04]'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-7 h-7 rounded-md bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <div className="w-7 h-7 rounded-md bg-white/[0.05] border border-white/[0.08] flex items-center justify-center flex-shrink-0 shadow-sm text-sky-400">
                       {item.icon}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-ink-primary truncate">
+                        <span className="text-xs font-semibold text-white truncate">
                           {item.title}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200/60 text-ink-muted uppercase tracking-wider font-mono">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/[0.06] text-slate-400 uppercase tracking-wider font-mono">
                           {item.category}
                         </span>
                       </div>
-                      <p className="text-[11px] text-ink-muted truncate mt-0.5">
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
                         {item.subtitle}
                       </p>
                     </div>
                   </div>
                   {isSelected && (
-                    <CornerDownLeft size={13} className="text-ink-muted ml-2 flex-shrink-0" />
+                    <CornerDownLeft size={13} className="text-sky-400 ml-2 flex-shrink-0" />
                   )}
                 </div>
               );
@@ -265,12 +272,12 @@ export default function CommandPalette({
           )}
         </div>
 
-        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-t border-ink-border text-[11px] text-ink-muted">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-[#0A0D13] border-t border-white/[0.08] text-[11px] text-slate-400 font-mono">
           <div className="flex items-center gap-3">
-            <span>Use <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[9px]">↑</kbd> <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[9px]">↓</kbd> to navigate</span>
-            <span><kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[9px]">↵</kbd> to select</span>
+            <span>Use <kbd className="px-1 py-0.5 bg-white/[0.06] border border-white/[0.1] rounded font-mono text-[9px] text-slate-300">↑</kbd> <kbd className="px-1 py-0.5 bg-white/[0.06] border border-white/[0.1] rounded font-mono text-[9px] text-slate-300">↓</kbd> to navigate</span>
+            <span><kbd className="px-1 py-0.5 bg-white/[0.06] border border-white/[0.1] rounded font-mono text-[9px] text-slate-300">↵</kbd> to select</span>
           </div>
-          <span className="font-mono text-[10px] text-signal-blue">Sentinel Command Palette</span>
+          <span className="font-mono text-[10px] text-sky-400">Sentinel Command Palette</span>
         </div>
       </div>
     </div>

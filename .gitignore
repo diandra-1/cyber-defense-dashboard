@@ -4,7 +4,7 @@ build
 .env.local
 .DS_Store
 
-# Local AI & agent configs
+# Local workspace overrides
 CLAUDE.md
 *_SKILL.md
 opencode.json

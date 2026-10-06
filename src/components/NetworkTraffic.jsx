@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, 
   Download, 
@@ -12,6 +13,8 @@ import {
   CheckCircle2, 
   AlertTriangle 
 } from 'lucide-react';
+import { appleSprings } from '../lib/fluidMotion';
+import { audioEngine } from '../lib/audioEngine';
 
 // Authentic production historical datasets per time window
 const PERIOD_DATASETS = {
@@ -138,22 +141,23 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
 
   // Trigger real-time traffic surge simulation
   const handleSimulateSurge = () => {
+    audioEngine.sonarPing(0.12);
     setIsSurge(true);
     setSurgeCountdown(4);
     setInboundTrace(prev => {
       const next = [...prev];
-      next[next.length - 1] = Math.min(158, Math.max(145, next[next.length - 1] + 35));
+      next[next.length - 1] = Math.min(158, next[next.length - 1] + 45);
       return next;
     });
-    onSay?.('Traffic surge injected: Inbound velocity peaked at +75 Mbps. Gateway auto-scaling engaged.');
+    onSay?.('Simulated ingress DDoS wave injected: Gateway rate surged to +48.2%.');
   };
 
-  // Protocols breakdown
+  // Protocols breakdown - Cohesive, restrained tonal hierarchy
   const protocols = [
-    { name: 'HTTPS', port: 'TLS 1.3 · Port 443', percent: 68, color: '#2563EB', bandwidth: '96.8 Mbps' },
-    { name: 'WireGuard', port: 'Zero-Trust · UDP 51820', percent: 16, color: '#10B981', bandwidth: '22.8 Mbps' },
-    { name: 'DNS (DoH)', port: 'Encrypted · Port 853', percent: 11, color: '#F59E0B', bandwidth: '15.6 Mbps' },
-    { name: 'SSH Bastion', port: 'Protected · Port 22', percent: 5, color: '#64748B', bandwidth: '7.1 Mbps' }
+    { name: 'HTTPS', port: 'TLS 1.3 · Port 443', percent: 68, color: '#38BDF8', bandwidth: '96.8 Mbps' },
+    { name: 'WireGuard', port: 'Zero-Trust · UDP 51820', percent: 16, color: '#0EA5E9', bandwidth: '22.8 Mbps' },
+    { name: 'DNS (DoH)', port: 'Encrypted · Port 853', percent: 11, color: '#64748B', bandwidth: '15.6 Mbps' },
+    { name: 'SSH Bastion', port: 'Protected · Port 22', percent: 5, color: '#94A3B8', bandwidth: '7.1 Mbps' }
   ];
 
   // SVG Canvas dimensions
@@ -203,12 +207,15 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
   const lastInboundY = 175 - (currentInbound / 160) * 155;
   const lastOutboundY = 175 - (currentOutbound / 160) * 155;
 
-  // Handle hover crosshair scrubbing
-  const handleStageMouseMove = (e) => {
+  // Handle 1:1 direct pointer scrubbing (Instantaneous low-latency tracking)
+  const handlePointerScrub = (e) => {
     if (!chartStageRef.current) return;
     const rect = chartStageRef.current.getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const idx = Math.round(pct * (inboundTrace.length - 1));
+    if (idx !== hoverIndex) {
+      audioEngine.tick(0.015);
+    }
     setHoverIndex(idx);
   };
 
@@ -221,101 +228,89 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
 
   return (
     <article className="panel traffic-panel">
-      {/* Panel Header */}
-      <header className="panel-heading">
+      {/* Streamlined Balanced Header */}
+      <header className="panel-heading mb-3">
         <div>
-          <h2 className="font-display">Network Traffic & Gateway Telemetry</h2>
-          <p>Sensor Node: Gateway-East-01 (AS13335) · {activeDataset.label}</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse-subtle" />
+            <span className="text-[10.5px] font-mono uppercase tracking-wider text-slate-400">Gateway Telemetry</span>
+          </div>
+          <h2 className="font-display text-base text-white tracking-tight">Real-time Traffic Flow</h2>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full">
-            Vol: {activeDataset.totalVolume}
-          </span>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Rate Readouts */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-400/20 text-xs font-mono">
+            <span className={`w-1.5 h-1.5 rounded-full ${isSurge ? 'bg-signal-coral animate-pulse' : 'bg-sky-400'}`} />
+            <span className="text-white font-semibold">{currentInbound}</span>
+            <span className="text-sky-300">Mbps In</span>
+          </div>
+          {streamMode === 'dual' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+              <span className="text-white font-semibold">{currentOutbound}</span>
+              <span className="text-slate-400">Mbps Out</span>
+            </div>
+          )}
+
+          {/* Time Period Filter Pills */}
+          <div className="period sm:ml-1">
+            {['1h', '6h', '24h', '7d'].map(p => (
+              <button
+                key={p}
+                className={period === p ? 'selected' : ''}
+                onClick={() => {
+                  audioEngine.tick(0.04);
+                  setPeriod?.(p);
+                  onSay?.(`Window set to ${p}.`);
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
 
           <button 
             type="button"
-            className="secondary-btn text-xs"
+            className="secondary-btn text-xs ml-1"
             onClick={handleSimulateSurge}
-            title="Inject a real-time traffic surge"
+            title="Inject traffic surge test"
           >
             <Zap size={13} className="text-signal-coral" />
-            Simulate Surge
-          </button>
-          <button 
-            className="secondary-btn text-xs"
-            onClick={() => onSay?.(`Network PCAP flow exported for ${period} (${activeDataset.totalVolume}).`)}
-          >
-            <Download size={13} />
-            Export PCAP
+            Surge
           </button>
         </div>
       </header>
 
-      {/* Production-Grade Real-time Telemetry KPI Tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 p-3 rounded-xl bg-slate-50 border border-ink-border">
-        <div>
-          <span className="text-[11px] text-slate-500 block uppercase font-semibold tracking-wider">Inbound Ingress</span>
-          <span className="text-lg font-bold text-slate-900 flex items-baseline gap-1.5 mt-0.5 font-display">
-            <span className="w-2 h-2 rounded-full bg-signal-coral inline-block" />
-            {currentInbound} <small className="text-xs font-medium text-slate-500 font-sans">Mbps</small>
-            <span className={`text-[11px] font-semibold ml-1 ${isSurge ? 'text-signal-coral' : 'text-signal-emerald'}`}>
-              {isSurge ? '+48.2%' : '+5.8%'}
-            </span>
-          </span>
-          <small className="text-[10px] text-slate-400 block">Baseline: {activeDataset.baselineInbound}</small>
-        </div>
-
-        <div>
-          <span className="text-[11px] text-slate-500 block uppercase font-semibold tracking-wider">Outbound Egress</span>
-          <span className="text-lg font-bold text-slate-900 flex items-baseline gap-1.5 mt-0.5 font-display">
-            <span className="w-2 h-2 rounded-full bg-signal-blue inline-block" />
-            {currentOutbound} <small className="text-xs font-medium text-slate-500 font-sans">Mbps</small>
-            <span className="text-[11px] font-semibold text-slate-500 ml-1">-1.4%</span>
-          </span>
-          <small className="text-[10px] text-slate-400 block">Baseline: {activeDataset.baselineOutbound}</small>
-        </div>
-
-        <div>
-          <span className="text-[11px] text-slate-500 block uppercase font-semibold tracking-wider">Packet Velocity</span>
-          <span className="text-lg font-bold text-slate-900 block mt-0.5 font-display">
-            {packetRate} <small className="text-xs font-medium text-slate-500 font-sans">p/s</small>
-          </span>
-          <small className="text-[10px] text-signal-emerald block">Jitter: 1.1ms · 0% Drop</small>
-        </div>
-
-        <div>
-          <span className="text-[11px] text-slate-500 block uppercase font-semibold tracking-wider">Active Sockets</span>
-          <span className="text-lg font-bold text-signal-emerald block mt-0.5 font-display">
-            248 <small className="text-xs font-medium text-slate-500 font-sans">Streams</small>
-          </span>
-          <small className="text-[10px] text-slate-400 block">0 SYN_RECV · Buffer OK</small>
-        </div>
-      </div>
-
-      {/* Controls: Stream Legend, Overlay Mode Switch, and Authentically Functional Time Filter */}
-      <div className="traffic-controls">
-        <div className="flex items-center gap-4">
+      {/* Stream Mode Switch & DPI Status Row */}
+      <div className="flex items-center justify-between mb-3 text-xs">
+        <div className="flex items-center gap-3">
           <div className="streaming">
             <em />
-            <span className="font-semibold text-slate-700">Live Telemetry Tail</span>
+            <span className="font-mono text-slate-300 text-xs">Live DPI Stream</span>
           </div>
 
-          {/* Mode Switch: Inbound vs Dual Stream */}
-          <div className="hidden sm:flex items-center gap-1 p-0.5 rounded-lg bg-slate-100 border border-slate-200 text-xs">
+          <div className="hidden sm:flex items-center gap-1 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.08]">
             <button
               type="button"
-              onClick={() => setStreamMode('dual')}
+              onClick={() => {
+                audioEngine.tick(0.04);
+                setStreamMode('dual');
+              }}
               className={`px-2 py-0.5 rounded font-medium transition-all ${
-                streamMode === 'dual' ? 'bg-white shadow-sm text-slate-900 font-semibold' : 'text-slate-500 hover:text-slate-800'
+                streamMode === 'dual' ? 'bg-white/[0.12] text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Dual Stream (In + Out)
+              Dual Stream
             </button>
             <button
               type="button"
-              onClick={() => setStreamMode('inbound')}
+              onClick={() => {
+                audioEngine.tick(0.04);
+                setStreamMode('inbound');
+              }}
               className={`px-2 py-0.5 rounded font-medium transition-all ${
-                streamMode === 'inbound' ? 'bg-white shadow-sm text-slate-900 font-semibold' : 'text-slate-500 hover:text-slate-800'
+                streamMode === 'inbound' ? 'bg-white/[0.12] text-white font-semibold' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               Ingress Only
@@ -323,21 +318,9 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
           </div>
         </div>
 
-        {/* Authentically Functional Time Period Filter */}
-        <div className="period">
-          {['1h', '6h', '24h', '7d'].map(p => (
-            <button
-              key={p}
-              className={period === p ? 'selected' : ''}
-              onClick={() => {
-                setPeriod?.(p);
-                onSay?.(`Network window shifted to ${p}: ${PERIOD_DATASETS[p].label}`);
-              }}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
+        <span className="text-slate-400 text-[11px] font-mono hidden md:inline">
+          DPI Filter Active · 0 SYN_RECV
+        </span>
       </div>
 
       {/* Production Dual-Stream Waveform Chart with Y-Axis, Capacity Threshold, and Crosshair Tooltip */}
@@ -351,14 +334,21 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
           <span>0M</span>
         </div>
 
-        {/* SVG Chart Stage */}
+        {/* SVG Chart Stage with iOS Fluid Pointer Capture */}
         <div 
           ref={chartStageRef}
-          className="traffic-chart-stage live-chart"
-          onMouseMove={handleStageMouseMove}
-          onMouseLeave={() => setHoverIndex(null)}
+          className="traffic-chart-stage live-chart cursor-crosshair touch-none"
+          onPointerDown={handlePointerScrub}
+          onPointerMove={(e) => {
+            if (e.buttons > 0 || hoverIndex !== null) {
+              handlePointerScrub(e);
+            }
+          }}
+          onPointerUp={() => setHoverIndex(null)}
+          onPointerLeave={() => setHoverIndex(null)}
+          onPointerCancel={() => setHoverIndex(null)}
         >
-          {/* Crosshair Vertical Guide Ruler (only appears on hover) */}
+          {/* Crosshair Vertical Guide Ruler */}
           {activeHoverData && (
             <div 
               className="crosshair-ruler"
@@ -366,53 +356,59 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
             />
           )}
 
-          {/* Floating Scrubbing Tooltip */}
-          {activeHoverData && (
-            <div 
-              className="traffic-scrub-tooltip"
-              style={{ left: `${Math.max(16, Math.min(84, activeHoverData.pctX))}%` }}
-            >
-              <div className="traffic-scrub-tooltip-header">
-                <span>⏱️ {activeHoverData.time}</span>
-                <span className="text-signal-emerald">DPI: OK</span>
-              </div>
-              <div className="traffic-scrub-row">
-                <span className="text-slate-300 flex items-center gap-1.5">
-                  <i className="w-2 h-2 rounded-full bg-signal-coral inline-block" /> Inbound Ingress
-                </span>
-                <b className="text-white">{activeHoverData.inbound} Mbps</b>
-              </div>
-              {streamMode === 'dual' && (
-                <div className="traffic-scrub-row">
-                  <span className="text-slate-300 flex items-center gap-1.5">
-                    <i className="w-2 h-2 rounded-full bg-signal-blue inline-block" /> Outbound Egress
-                  </span>
-                  <b className="text-white">{activeHoverData.outbound} Mbps</b>
+          {/* Floating Scrubbing Tooltip with Fluid Spring Glide */}
+          <AnimatePresence>
+            {activeHoverData && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.94, y: 4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 4 }}
+                transition={appleSprings.dropdown}
+                className="traffic-scrub-tooltip"
+                style={{ left: `${Math.max(16, Math.min(84, activeHoverData.pctX))}%` }}
+              >
+                <div className="traffic-scrub-tooltip-header">
+                  <span>⏱️ {activeHoverData.time}</span>
+                  <span className="text-slate-300 font-mono text-[10px]">DPI: VERIFIED</span>
                 </div>
-              )}
-              <div className="traffic-scrub-row pt-1 border-t border-white/10 mt-1.5 text-[11px] text-slate-400">
-                <span>Drop Rate: 0.00%</span>
-                <span className="text-emerald-400 font-semibold">Nominal Flow</span>
-              </div>
-            </div>
-          )}
+                <div className="traffic-scrub-row">
+                  <span className="text-slate-300 flex items-center gap-1.5 font-mono text-xs">
+                    <i className="w-2 h-2 rounded-full bg-signal-blue inline-block" /> Inbound Ingress
+                  </span>
+                  <b className="text-white font-mono">{activeHoverData.inbound} Mbps</b>
+                </div>
+                {streamMode === 'dual' && (
+                  <div className="traffic-scrub-row">
+                    <span className="text-slate-300 flex items-center gap-1.5 font-mono text-xs">
+                      <i className="w-2 h-2 rounded-full bg-slate-400 inline-block" /> Outbound Egress
+                    </span>
+                    <b className="text-white font-mono">{activeHoverData.outbound} Mbps</b>
+                  </div>
+                )}
+                <div className="traffic-scrub-row pt-1 border-t border-white/10 mt-1.5 text-[11px] text-slate-400 font-mono">
+                  <span>Drop Rate: 0.00%</span>
+                  <span className="text-slate-300 font-medium">Nominal Flow</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <svg viewBox="0 0 680 185" preserveAspectRatio="none">
+          <svg viewBox="0 0 680 185" preserveAspectRatio="none" className={isSurge ? 'surge' : ''}>
             <defs>
-              {/* Inbound Coral Gradient */}
-              <linearGradient id="coralFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#F2542D" stopOpacity="0.22" />
-                <stop offset="80%" stopColor="#F2542D" stopOpacity="0.02" />
-                <stop offset="100%" stopColor="#F2542D" stopOpacity="0" />
+              {/* Inbound Telemetry Gradient - Electric Cyan Glow */}
+              <linearGradient id="inboundFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={isSurge ? "#EF4444" : "#38BDF8"} stopOpacity="0.22" />
+                <stop offset="60%" stopColor={isSurge ? "#EF4444" : "#38BDF8"} stopOpacity="0.06" />
+                <stop offset="100%" stopColor={isSurge ? "#EF4444" : "#38BDF8"} stopOpacity="0" />
               </linearGradient>
-              {/* Outbound Blue Gradient */}
-              <linearGradient id="blueFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563EB" stopOpacity="0.14" />
-                <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+              {/* Outbound Telemetry Gradient */}
+              <linearGradient id="outboundFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#94A3B8" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
               </linearGradient>
             </defs>
             
-            {/* Precision Reference Grid Lines (0M, 40M, 80M, 120M, 160M) */}
+            {/* Precision Reference Grid Lines */}
             {[20, 60, 100, 140, 175].map(y => (
               <line key={y} x1="0" x2="680" y1={y} y2={y} />
             ))}
@@ -429,24 +425,24 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
               </>
             )}
 
-            {/* Live Pulsing Ingestion Tip Circles (Ujung kanan data terbaru) */}
-            <circle cx="680" cy={lastInboundY} r="5" fill="#F2542D" stroke="#FFFFFF" strokeWidth="2.5" />
+            {/* Live Pulsing Ingestion Tip Circles */}
+            <circle cx="680" cy={lastInboundY} r="4.5" fill={isSurge ? "#EF4444" : "#38BDF8"} stroke="#080A0F" strokeWidth="2" />
             {streamMode === 'dual' && (
-              <circle cx="680" cy={lastOutboundY} r="4" fill="#2563EB" stroke="#FFFFFF" strokeWidth="2" />
+              <circle cx="680" cy={lastOutboundY} r="3.5" fill="#94A3B8" stroke="#080A0F" strokeWidth="1.5" />
             )}
           </svg>
         </div>
       </div>
 
       {/* Synchronized X-Axis Time Labels matching the selected period */}
-      <div className="flex justify-between text-xs text-slate-500 pl-14 pr-2 font-medium">
+      <div className="flex justify-between text-xs text-slate-500 pl-14 pr-2 font-medium font-mono">
         {activeDataset.xAxis.map((label, i) => (
           <span 
             key={i} 
-            className={i === activeDataset.xAxis.length - 1 ? 'text-signal-coral font-bold flex items-center gap-1' : ''}
+            className={i === activeDataset.xAxis.length - 1 ? (isSurge ? 'text-signal-coral font-bold flex items-center gap-1' : 'text-signal-blue font-bold flex items-center gap-1') : ''}
           >
             {i === activeDataset.xAxis.length - 1 && (
-              <span className="w-1.5 h-1.5 rounded-full bg-signal-coral animate-pulse" />
+              <span className={`w-1.5 h-1.5 rounded-full ${isSurge ? 'bg-signal-coral' : 'bg-signal-blue'} animate-pulse`} />
             )}
             {label}
           </span>
@@ -454,17 +450,17 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
       </div>
 
       {/* Deep Packet Inspection (DPI) Protocol Composition */}
-      <div className="mt-4 pt-3.5 border-t border-ink-border">
+      <div className="mt-4 pt-3.5 border-t border-white/[0.08]">
         <div className="flex items-center justify-between text-xs mb-2">
-          <span className="font-semibold text-slate-900 flex items-center gap-1.5 font-display">
-            <Layers size={14} className="text-slate-500" />
+          <span className="font-semibold text-slate-200 flex items-center gap-1.5 font-display">
+            <Layers size={14} className="text-slate-400" />
             Traffic Composition by Protocol
           </span>
-          <span className="text-slate-500 text-[11px] font-medium">DPI Inspected: 100% · Zero Packet Drops</span>
+          <span className="text-slate-400 text-[11px] font-mono">DPI Inspected: 100% · Zero Drops</span>
         </div>
 
-        {/* Stacked multi-color progress bar */}
-        <div className="w-full h-2.5 rounded-full bg-slate-100 flex overflow-hidden mb-3 shadow-inner">
+        {/* Stacked progress bar */}
+        <div className="w-full h-2.5 rounded-full bg-white/[0.06] flex overflow-hidden mb-3 shadow-inner">
           {protocols.map((proto, idx) => {
             const isSelected = selectedProtocol === proto.name;
             return (
@@ -475,8 +471,9 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
                   backgroundColor: proto.color,
                   opacity: selectedProtocol && !isSelected ? 0.35 : 1
                 }} 
-                className="h-full transition-all duration-300 first:rounded-l-full last:rounded-r-full cursor-pointer hover:brightness-110"
+                className="h-full transition-all duration-300 first:rounded-l-full last:rounded-r-full cursor-pointer hover:brightness-125"
                 onClick={() => {
+                  audioEngine.tick(0.04);
                   setSelectedProtocol(isSelected ? null : proto.name);
                   onSay?.(`Inspecting ${proto.name}: ${proto.port} throughput is ${proto.bandwidth}.`);
                 }}
@@ -496,20 +493,21 @@ export default function NetworkTraffic({ period = '24h', setPeriod, onSay }) {
                 type="button"
                 className={`p-2 rounded-lg text-left transition-all border ${
                   isSelected 
-                    ? 'border-slate-400 bg-slate-100 shadow-sm' 
-                    : 'border-transparent hover:bg-slate-50'
+                    ? 'border-sky-400/40 bg-white/[0.08] shadow-sm' 
+                    : 'border-transparent hover:bg-white/[0.04]'
                 }`}
                 onClick={() => {
+                  audioEngine.tick(0.04);
                   setSelectedProtocol(isSelected ? null : proto.name);
                   onSay?.(`Protocol ${proto.name} (${proto.port}) selected: ${proto.percent}% share.`);
                 }}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: proto.color }} />
-                  <span className="font-semibold text-slate-900 truncate">{proto.name}</span>
-                  <span className="font-bold text-slate-700 ml-auto">{proto.percent}%</span>
+                  <span className="font-semibold text-slate-200 truncate">{proto.name}</span>
+                  <span className="font-bold text-sky-400 font-mono ml-auto">{proto.percent}%</span>
                 </div>
-                <span className="text-[11px] text-slate-500 block truncate">{proto.port}</span>
+                <span className="text-[11px] text-slate-400 block truncate font-mono">{proto.port}</span>
               </button>
             );
           })}

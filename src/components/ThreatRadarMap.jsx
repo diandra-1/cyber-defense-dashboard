@@ -13,6 +13,7 @@ import {
   Zap,
   Globe
 } from 'lucide-react';
+import { audioEngine } from '../lib/audioEngine';
 
 export default function ThreatRadarMap({ onSay, onNavigate }) {
   const canvasRef = useRef(null);
@@ -308,23 +309,26 @@ export default function ThreatRadarMap({ onSay, onNavigate }) {
 
   return (
     <article className="panel threat-map">
-      {/* Header */}
-      <header className="panel-heading">
+      {/* Streamlined Calm Header */}
+      <header className="panel-heading mb-2">
         <div>
-          <h2 className="font-display">Global Edge Traffic & Scrubbing Mesh</h2>
-          <p>Real-time ingress requests across 8 Global Edge PoPs routed to Singapore HQ</p>
+          <h2 className="font-display text-base text-white">Global Edge Mesh</h2>
+          <p className="text-xs text-slate-400 font-mono">8 Global PoPs · {totalMeshReqs}</p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 font-display">
-            <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald animate-pulse-subtle" />
-            {totalMeshReqs} Mesh
+          <span className="text-[10.5px] font-mono font-medium text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse-subtle" />
+            Live 60 FPS
           </span>
           <button 
-            className="quiet-link"
-            onClick={() => onNavigate?.('Threats')}
+            className="quiet-link text-sky-400 hover:text-sky-300 text-xs"
+            onClick={() => {
+              audioEngine.tick(0.04);
+              onNavigate?.('Threats');
+            }}
           >
-            View queue <ArrowRight size={13} />
+            Queue <ArrowRight size={12} />
           </button>
         </div>
       </header>
@@ -376,76 +380,35 @@ export default function ThreatRadarMap({ onSay, onNavigate }) {
         {/* Floating status & drag hint */}
         <div className="cobe-overlay-info">
           <span className="cobe-live-indicator">
-            <span className="w-2 h-2 rounded-full bg-signal-emerald animate-pulse-subtle inline-block" />
-            8 Edge Nodes Synchronized
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-subtle inline-block" />
+            {activePoP ? `${activePoP.region} · ${activePoP.city}` : '8 Edge Nodes'}
           </span>
           <span className="cobe-hint-text">
-            Drag to rotate 360°
+            Drag 360°
           </span>
         </div>
       </div>
 
-      {/* Selected Edge Node Dossier Panel */}
-      {activePoP && (
-        <div className="threat-dossier-bar">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-xl">{activePoP.flag}</span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <b className="truncate block font-display text-slate-900 text-xs">
-                  {activePoP.region} · {activePoP.city}, {activePoP.country}
-                </b>
-                {activePoP.isHQ && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700">
-                    CORE HQ
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] text-slate-600 block truncate mt-0.5">
-                Role: <strong>{activePoP.role}</strong> · Status: <strong className="text-signal-emerald font-medium">{activePoP.status}</strong>
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-900 text-white font-mono flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald animate-pulse-subtle" />
-              {cdnTraffic.find(t => t.id.includes(activePoP.id.slice(0, 3)))?.value || 420}k req/s
-            </span>
-            <button
-              type="button"
-              className="dossier-block-btn"
-              onClick={() => onSay?.(`DDoS Scrubbing Profile updated for ${activePoP.region} (${activePoP.city}).`)}
-            >
-              Tune PoP Rules
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Global Edge PoPs Traffic Roster with Click-to-Focus */}
-      <div className="origin-ranks">
-        {edgePoPs.slice(0, 4).map(pop => {
+      {/* Quick Edge PoP Focus Chips */}
+      <div className="flex flex-wrap items-center justify-between gap-1.5 mt-2.5 pt-2 border-t border-white/[0.08]">
+        {edgePoPs.slice(0, 5).map(pop => {
           const isSelected = activePoP?.id === pop.id;
-          const liveVal = cdnTraffic.find(t => t.id.includes(pop.id.slice(0, 3)))?.value || 380;
           return (
             <button
               key={pop.id}
               type="button"
-              className={isSelected ? 'bg-slate-100 border-slate-300 ring-1 ring-slate-300' : ''}
-              onClick={() => focusOnPoP(pop)}
+              className={`px-2 py-1 rounded-md text-[11px] font-mono transition-colors flex items-center gap-1.5 ${
+                isSelected 
+                  ? 'bg-sky-500/15 border border-sky-400/30 text-sky-300 font-semibold shadow-xs' 
+                  : 'bg-white/[0.03] border border-white/[0.06] text-slate-400 hover:text-white hover:bg-white/[0.06]'
+              }`}
+              onClick={() => {
+                audioEngine.tick(0.04);
+                focusOnPoP(pop);
+              }}
             >
-              <span className="flex items-center gap-2">
-                <span className="text-base">{pop.flag}</span>
-                <b className="text-slate-900 font-display">{pop.region}</b>
-              </span>
-              <span className="font-semibold text-slate-800 text-xs">{pop.city}</span>
-              <span className="text-[11px] text-slate-500 font-mono ml-auto">
-                {liveVal}k req/s
-              </span>
-              <span className="text-xs font-bold text-signal-blue font-mono ml-3">
-                {pop.traffic}
-              </span>
+              <span>{pop.flag}</span>
+              <span>{pop.region}</span>
             </button>
           );
         })}

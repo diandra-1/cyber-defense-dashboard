@@ -69,18 +69,18 @@ export default function ReportsView({ onSay }) {
           {reports.map((rep, idx) => (
             <div 
               key={idx}
-              className="p-4 rounded-xl border border-ink-border bg-slate-50/50 hover:bg-slate-50 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
+              className="p-4 rounded-xl border border-ink-border bg-white/[0.03] hover:bg-white/[0.06] transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
             >
               <div className="flex items-start gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-signal-blue flex-shrink-0 shadow-sm mt-0.5">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-sky-400 flex-shrink-0 shadow-sm mt-0.5">
                   <FileText size={18} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <b className="text-sm font-semibold text-ink-primary group-hover:text-signal-blue transition-colors">
+                    <b className="text-sm font-semibold text-ink-primary group-hover:text-sky-400 transition-colors">
                       {rep.title}
                     </b>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-200/70 text-ink-secondary">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.08] text-slate-300">
                       {rep.type}
                     </span>
                   </div>
